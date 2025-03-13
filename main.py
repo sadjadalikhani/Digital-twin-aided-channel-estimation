@@ -209,12 +209,5 @@ for trial in range(trials):
         ss_nmse[dataset_idx, :, trial] = todB(avg_nmse_ss) if loss_func == "nmse" else avg_nmse_ss
         
     # CDF PLOT
-    datasets = [
-        "Real-world",  
-        "Digital twin",  
-        "RL-calibrated digital twin",  
-        "Random DFT-based pilots",  
-        "RL-calibrated random pilots"
-    ]
     plot_smooth_cdf(datasets, ss_nmse, trial=trial, loss_func=loss_func, n=13, r=0.2)
 
