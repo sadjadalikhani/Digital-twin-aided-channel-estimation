@@ -53,12 +53,29 @@ def get_parameters(scenario, n_path):
     'indianapolis_4mShifted_28GHz': {
         'n_rows': 80,
         'n_per_row': 79
+    },
+    'iceland_rw': {
+        'n_rows': 74,
+        'n_per_row': 83
+    },
+    'iceland_dt': {
+        'n_rows': 74,
+        'n_per_row': 83
+    },
+    'barcelona_dt': {
+        'n_rows': 64,
+        'n_per_row': 65
+    },
+    'barcelona_rw': {
+        'n_rows': 64,
+        'n_per_row': 65
     }}
-    
+
+
     parameters = DeepMIMOv3.default_params()
     parameters['dataset_folder'] = './scenarios'
     parameters['scenario'] = scenario
-    parameters['active_BS'] = np.array([3]) 
+    parameters['active_BS'] = np.array([3])  # np.array([3]) 
     parameters['user_rows'] = np.arange(row_column_users[scenario]['n_rows'])
     parameters['bs_antenna']['shape'] = np.array([n_ant_bs, n_ant_bs_vert]) # Horizontal, Vertical 
     parameters['bs_antenna']['rotation'] = np.array([0,0,-135]) # (x,y,z)

@@ -236,9 +236,9 @@ def k_means(
     kmeans_labels = kmeans.labels_
     kmeans_centroids = kmeans.cluster_centers_
 
-    kmeans_areas = [preprocess.Area(enabled_idxs[np.where(kmeans.labels_ == i)[0]], 
-                      name=i, center=kmeans_centroids[i][:2]/pos_coeff) for i in range(n_kmeans_clusters)]
-    preprocess.plot_areas(kmeans_areas, pos, bs_pos, details=None)
+    # kmeans_areas = [preprocess.Area(enabled_idxs[np.where(kmeans.labels_ == i)[0]], 
+    #                   name=i, center=kmeans_centroids[i][:2]/pos_coeff) for i in range(n_kmeans_clusters)]
+    # preprocess.plot_areas(kmeans_areas, pos, bs_pos, details=None)
 
     dim=[]
     dt_subspaces = []
@@ -285,7 +285,7 @@ def k_med(reduced_subspaces,
         subspace_coeff, 
         kmeans_centroids)
 
-    k_medoids = KMedoids(n_clusters=n_areas, random_state=seed, max_iter=300) 
+    k_medoids = KMedoids(n_clusters=n_areas, random_state=seed, max_iter=100) # 300
     k_medoids.fit(distance_matrix)
     k_medoids_labels = k_medoids.labels_
     medoid_positions = kmeans_centroids[k_medoids.medoid_indices_]
@@ -298,7 +298,7 @@ def k_med(reduced_subspaces,
     areas = [preprocess.Area(enabled_idxs[np.where(final_labels == i)[0]], 
                       name=i, center=medoid_positions[i][:2] / pos_coeff) for i in range(n_areas)]
     
-    preprocess.plot_areas(areas, pos, bs_pos)
+    # preprocess.plot_areas(areas, pos, bs_pos)
     
     area_lens = [np.sum(final_labels == i) for i in range(n_areas)]
     min_idxs, max_idxs, mean_idxs = np.min(area_lens), np.max(area_lens), np.mean(area_lens)
@@ -358,7 +358,7 @@ def subspace_estimation(dataset_2paths_raw,
                 
             nmse_ss[selected_area_idx, n_pilot_idx] = perf.item() # n_pilot-1
             
-            print(f"zone id: {selected_area_idx}, n_pilots: {n_pilot}, perf: {perf.item()}")
+            print(f"zone id: {selected_area_idx}, n_pilots: {n_pilot}, perf: {perf.item():.3f}")
 
     nmse_ss = torch.tensor(nmse_ss, dtype=torch.float32)
     area_lens = torch.tensor(area_lens, dtype=torch.float32).view(-1, 1)  
@@ -367,7 +367,7 @@ def subspace_estimation(dataset_2paths_raw,
     return avg_nmse_ss.numpy()
 
 #%% DRL
-device = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:3" if torch.cuda.is_available() else "cpu")
 
 class RobustDQN(nn.Module):
     def __init__(self, state_dim, action_dim):
@@ -671,4 +671,168 @@ def majority_vote_bins_in_angle_domain(channels, dft_codebook, k=5):
     bin_counts = Counter(dominant_bins)
     majority_bins = [bin for bin, _ in bin_counts.most_common(k)]
     return majority_bins
+#%% GENERATE DFT CODEBOOK
+def generate_dft_codebook(M_x, M_y=None):
+    dft_x = np.fft.fft(np.eye(M_x)) / np.sqrt(M_x)
+    if M_y is None:
+        codebook = dft_x
+    else:
+        dft_y = np.fft.fft(np.eye(M_y)) / np.sqrt(M_y)
+        codebook = np.kron(dft_y, dft_x)  
+    return torch.tensor(codebook).to(torch.complex64)
+#%%
+import matplotlib.cm as cm
+def smooth_cdf(data, n=20, r=0.4):
+    """
+    Smooths the CDF curve by averaging values within a radius `r` of neighboring n points.
 
+    Args:
+        data (np.array): 1D array of values for which CDF is computed.
+        n (int): Number of intermediate points between min and max for smoothing.
+        r (float): Radius percentage (relative to distance between n points).
+
+    Returns:
+        np.array: Smoothed x-values.
+        np.array: Smoothed CDF values.
+    """
+
+    # Sort data and compute empirical CDF
+    sorted_data = np.sort(data)
+    cdf = np.arange(1, len(sorted_data) + 1) / len(sorted_data)
+
+    # Define n equally spaced points between min and max
+    x_smooth = np.linspace(sorted_data.min(), sorted_data.max(), n, endpoint=True)
+
+    # Compute adaptive radius as a fraction of the spacing between n points
+    dist_between_points = np.diff(x_smooth).mean()  # Approximate distance
+    adaptive_r = r * dist_between_points  # Adaptive radius
+
+    # Compute smoothed CDF values
+    y_smooth = []
+    for x in x_smooth:
+        # Find all points within the radius
+        mask = (sorted_data >= x - adaptive_r) & (sorted_data <= x + adaptive_r)
+        if np.any(mask):
+            avg_cdf = np.mean(cdf[mask])  # Compute the average CDF in the range
+        else:
+            avg_cdf = np.interp(x, sorted_data, cdf)  # Use interpolation if no points within radius
+        y_smooth.append(avg_cdf)
+
+    # Add min and max points for completeness
+    x_final = np.concatenate(([sorted_data.min()], x_smooth, [sorted_data.max()]))
+    y_final = np.concatenate(([0], y_smooth, [1]))
+
+    return x_final, y_final
+
+def plot_smooth_cdf(datasets, ss_nmse, trial, loss_func, n=10, r=0.4):
+    """
+    Plots smoothed CDF curves for multiple datasets.
+
+    Args:
+        datasets (list of str): List of dataset names.
+        ss_nmse (list of np.array): List of NMSE values per dataset.
+        trial (int): Current trial index.
+        loss_func (str): Type of loss function used ("nmse", "cosine", or "throughput").
+        n (int): Number of interpolation points.
+        r (float): Radius percentage relative to distance between n points.
+    """
+
+    # Define colormap and colors
+    colormap = cm.get_cmap('Spectral', int(3 * 1.5))
+    colors = [colormap(i / (3 - 1)) for i in range(len(datasets))]
+    
+    # Adjust colors: Set second and third curves to dark orange
+    colors[1] = (0.9, 0.5, 0.1, 1.0)  
+    colors[2] = (0.9, 0.5, 0.1, 1.0)  
+
+    # Define line styles
+    line_styles = ['-', '-', '--', '-', '--']  # Third is dashed version of second, fifth is dashed version of fourth
+
+    plt.figure(dpi=1000)
+
+    for i in range(len(ss_nmse)):
+        # Smooth the CDF
+        sorted_vals = np.sort(ss_nmse[i][0][:trial+1])
+        x_smooth, y_smooth = smooth_cdf(sorted_vals, n=n, r=r)
+
+        # Choose color based on index
+        color_idx = i if i in [0, 1, 3] else i - 1
+
+        # Plot smoothed CDF
+        plt.plot(x_smooth, y_smooth, 
+                 color=colors[color_idx], 
+                 linestyle=line_styles[i],  
+                 label=f"{datasets[i]}", linewidth=2.5)
+
+    # Set plot labels dynamically
+    font_properties = {'family': 'Arial', 'fontsize': 12}
+
+    plt.xlabel(
+        "NMSE (dB)" if loss_func == "nmse" else 
+        "Cosine similarity" if loss_func == "cosine" else 
+        "Throughput", 
+        **font_properties  # Apply font properties
+    )
+    
+    plt.ylabel("Empirical CDF", **font_properties)  # Apply same font to ylabel
+    plt.legend(fontsize=10, loc='upper left', frameon=True, facecolor='white', edgecolor='black',
+           prop={'family': 'Arial'})
+    plt.grid(True, linestyle="--", alpha=0.6)
+    plt.tight_layout()
+    plt.show()
+#%%
+def plot_perf_vs_pilots(datasets, ss_nmse, n_pilots, n_beams, trial, loss_func):
+    """
+    Plots NMSE, Cosine Similarity, or Throughput against the number of pilots (%) with MATLAB-style fonts.
+
+    Args:
+        datasets (list of str): List of dataset names.
+        ss_nmse (list of np.array): List of NMSE values per dataset.
+        n_pilots (np.array): Array representing the number of pilots.
+        n_beams (int): Number of beams.
+        trial (int): Current trial index.
+        loss_func (str): Type of metric ("nmse", "cosine", or "throughput").
+    """
+
+    # Define colormap and styles
+    colormap = cm.get_cmap('Spectral', int(len(datasets) * 1.5))
+    colors = [colormap(i / (len(datasets) - 1)) for i in range(len(datasets))]
+    line_styles = ['-', '-', '-', '-.', '--', ':']
+    markers = ['D', 's', 'o', '^', 'v', 'p', 'h', '*']
+
+    # Adjust colors: Set second dataset to dark orange
+    colors[1] = (0.9, 0.5, 0.1, 1.0)  
+
+    # Set MATLAB-style font properties
+    font_properties = {'family': 'Arial', 'fontsize': 12}
+
+    plt.figure(dpi=1000)
+
+    for i in range(len(datasets)):
+        x_values = n_pilots / n_beams * 100  # Convert to percentage
+        y_values = np.mean(ss_nmse[i][:, :trial+1], axis=-1)  # Compute mean across trials
+
+        linestyle = line_styles[i % len(line_styles)]
+        marker = markers[i % len(markers)]
+
+        plt.plot(x_values, y_values, label=f"{datasets[i]}", color=colors[i], linewidth=2,
+                 linestyle=linestyle, marker=marker, markerfacecolor='white', 
+                 markeredgewidth=2, markeredgecolor=colors[i])
+
+    # Apply MATLAB-style fonts to labels and legend
+    plt.xlabel("Number of pilots (%)", **font_properties)
+    plt.ylabel("NMSE (dB)" if loss_func == "nmse" else 
+               "Cosine similarity" if loss_func == "cosine" else 
+               "Throughput", **font_properties)
+
+    # Grid settings
+    plt.grid(True, linestyle="--", alpha=0.6)
+    plt.minorticks_on()
+    plt.grid(True, which='minor', linestyle=":", alpha=0.3)  # Minor grid with dotted lines
+
+    # Apply MATLAB-style legend font
+    plt.legend(fontsize=10, loc='lower right', frameon=True, facecolor='white', edgecolor='black', 
+               prop={'family': 'Arial'})
+
+    plt.tight_layout()
+    plt.show()
