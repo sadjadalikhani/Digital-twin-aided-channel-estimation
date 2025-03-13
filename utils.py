@@ -367,7 +367,7 @@ def subspace_estimation(dataset_2paths_raw,
     return avg_nmse_ss.numpy()
 
 #%% DRL
-device = torch.device("cuda:3" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class RobustDQN(nn.Module):
     def __init__(self, state_dim, action_dim):
