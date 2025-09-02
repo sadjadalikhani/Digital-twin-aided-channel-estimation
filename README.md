@@ -1,42 +1,99 @@
 # Digital Twin-Aided Channel Estimation
 
-Effective channel estimation in sparse and high-dimensional environments is essential for next-generation wireless systems, particularly in large-scale MIMO deployments. This paper introduces a novel framework that leverages digital twins (DTs) as priors to enable efficient zone-specific subspace-based channel estimation (CE). Subspace-based CE significantly reduces feedback overhead by focusing on the dominant channel components, exploiting sparsity in the angular domain while preserving estimation accuracy. While DT channels may exhibit inaccuracies, their coarse-grained subspaces provide a powerful starting point, reducing the search space and accelerating convergence. The framework employs a two-step clustering process on the Grassmann manifold, combined with reinforcement learning (RL), to iteratively calibrate subspaces and align them with real-world counterparts. Simulations show that digital twins not only enable near-optimal performance but also enhance the accuracy of subspace calibration through RL, highlighting their potential as a step towards learnable digital twins.
+Implementation of zone-specific subspace prediction and calibration for wireless channel estimation using digital twin models.
 
 ## 📋 Overview
 
-This repository implements the research presented in the paper **"Digital twin aided channel estimation: Zone-specific subspace prediction and calibration"** ([arXiv:2501.02758](https://doi.org/10.48550/arXiv.2501.02758)). The system leverages digital twin technology to create simplified channel models that can be used for efficient channel estimation in real-world wireless environments.
+This repository implements the research presented in the paper **"Digital twin aided channel estimation: Zone-specific subspace prediction and calibration"** ([arXiv:2501.02758](https://doi.org/10.48550/arXiv.2501.02758)). The system provides two distinct approaches for digital twin-aided channel estimation using different datasets and methodologies.
 
-### Key Features
+## 🎯 Two Implementation Approaches
 
-- **Digital Twin Channel Generation**: Simplified channel models with reduced complexity (5 paths, no Doppler)
-- **Real-World Channel Simulation**: Comprehensive channel models with full complexity (25 paths, Doppler effects)
-- **Zone-Specific Subspace Estimation**: K-means clustering and subspace-based channel estimation
-- **DeepVerse Integration**: Advanced wireless channel simulation using DeepVerse framework
-- **Machine Learning Pipeline**: Support for various estimation algorithms including DRL-based optimization
-- **Performance Evaluation**: Comprehensive metrics including NMSE, cosine similarity, and throughput analysis
+### Part 1: DeepMIMO Indianapolis Dataset Approach
+**File: `main.py`**
+
+This approach uses the original Indianapolis datasets from DeepMIMO with building shifts and lower ray-tracing fidelity for digital twin generation.
+
+#### Key Features
+- **Real-World Dataset**: Original Indianapolis 28GHz dataset with full ray-tracing fidelity
+- **Digital Twin Dataset**: Indianapolis dataset with shifted buildings and reduced ray-tracing fidelity
+- **Building Shift Strategy**: DT buildings are shifted to create simplified channel models
+- **Lower Fidelity**: Reduced ray-tracing complexity for computational efficiency
+
+#### Usage
+```bash
+python main.py
+```
+
+#### Configuration
+```python
+# DeepMIMO Indianapolis scenarios
+scenarios = ['indianapolis_original_28GHz', 'indianapolis_2mShifted_28GHz', 'indianapolis_4mShifted_28GHz']
+n_beams = 64
+n_path = [10, 20]  # [DT paths, RW paths]
+```
+
+#### Dataset Structure
+```
+scenarios/
+├── indianapolis_original_28GHz/     # Real-World dataset
+├── indianapolis_2mShifted_28GHz/   # DT dataset (2m building shift)
+└── indianapolis_4mShifted_28GHz/   # DT dataset (4m building shift)
+```
+
+---
+
+### Part 2: DeepVerse Carla-Town05 Dataset Approach
+**File: `main_deepverse.py`**
+
+This approach uses the Carla-Town05 dataset from DeepVerse with Doppler effects and lower ray-tracing fidelity for digital twin generation.
+
+#### Key Features
+- **Real-World Dataset**: Carla-Town05 with Doppler effects enabled and full ray-tracing fidelity
+- **Digital Twin Dataset**: Carla-Town05 with Doppler disabled and reduced ray-tracing fidelity
+- **Doppler Control**: RW has Doppler enabled, DT has Doppler disabled
+- **Lower Fidelity**: Reduced ray-tracing complexity for computational efficiency
+
+#### Usage
+```bash
+python main_deepverse.py
+```
+
+#### Configuration
+```python
+# DeepVerse Carla-Town05 scenarios
+scenarios = np.arange(10)        # Number of scenarios to use
+n_beams = 128                    # Number of antenna beams
+n_path = [5, 25]                 # [DT paths, RW paths]
+trials = 20                      # Number of simulation trials
+```
+
+#### Dataset Structure
+```
+scenarios/
+└── Carla-Town05/
+    ├── param/                   # Configuration parameters
+    └── wireless/               # Channel data
+        ├── scene_0/           # Individual scene data
+        ├── scene_1/
+        └── ...
+```
 
 ## 🏗️ Architecture
 
 ### Core Components
 
 ```
-├── main_deepverse.py              # Main simulation and training pipeline
-├── deepverse/                     # DeepVerse integration package
-│   ├── deepverse_comm.py         # Communication channel utilities
+├── main.py                      # DeepMIMO Indianapolis approach
+├── main_deepverse.py            # DeepVerse Carla-Town05 approach
+├── deepverse/                   # DeepVerse integration package
+│   ├── deepverse_comm.py       # Communication channel utilities
 │   └── deepverse_dt_rw_channel_gen.py  # DT/RW channel generation
-├── utils.py                      # Core algorithms and utilities
-├── input_preprocess.py           # Data preprocessing and visualization
-└── scenarios/                    # DeepVerse scenario data
-    └── Carla-Town05/            # Urban environment scenarios
+├── utils.py                     # Core algorithms and utilities
+├── input_preprocess.py          # Data preprocessing and visualization
+└── scenarios/                   # Dataset scenarios
+    ├── indianapolis_*/         # DeepMIMO datasets
+    └── Carla-Town05/           # DeepVerse dataset
 ```
-
-### Data Flow
-
-1. **Channel Generation**: Generate paired Digital Twin and Real-World channel datasets
-2. **User Overlay**: Combine users from multiple scenes for enhanced ML training
-3. **Zone Clustering**: K-means clustering for spatial zone identification
-4. **Subspace Estimation**: Zone-specific subspace learning and calibration
-5. **Performance Evaluation**: Comprehensive analysis across multiple metrics
 
 ## 🚀 Quick Start
 
@@ -44,7 +101,7 @@ This repository implements the research presented in the paper **"Digital twin a
 
 - Python 3.8+
 - Conda environment with required packages
-- DeepVerse simulation framework
+- DeepMIMO and DeepVerse simulation frameworks
 - PyTorch, NumPy, Matplotlib, Scikit-learn
 
 ### Installation
@@ -57,30 +114,23 @@ This repository implements the research presented in the paper **"Digital twin a
 
 2. **Set up the environment**:
    ```bash
-   conda create -n lwmv2 python=3.8
-   conda activate lwmv2
-   pip install -r requirements.txt  # If available
+   conda create -n dtce python=3.8
+   conda activate dtce
+   pip install torch numpy matplotlib scikit-learn
    ```
 
-3. **Run the main simulation**:
+3. **Choose your approach**:
    ```bash
+   # For DeepMIMO Indianapolis approach
+   python main.py
+   
+   # For DeepVerse Carla-Town05 approach
    python main_deepverse.py
    ```
 
-### Configuration
-
-Key parameters can be adjusted in `main_deepverse.py`:
-
-```python
-scenarios = np.arange(10)        # Number of scenarios to use
-n_beams = 128                    # Number of antenna beams
-n_path = [5, 25]                 # [DT paths, RW paths]
-trials = 20                      # Number of simulation trials
-```
-
 ## 📊 Results and Visualization
 
-The system generates comprehensive results including:
+Both approaches generate comprehensive results including:
 
 - **Channel Estimation Performance**: NMSE, cosine similarity, and throughput metrics
 - **Zone Analysis**: Spatial clustering and subspace characteristics
@@ -93,8 +143,8 @@ All figures are automatically saved to the `figs/` directory with high-resolutio
 
 ### Digital Twin Methodology
 
-- **Simplified Models**: 5-path channels without Doppler effects for computational efficiency
-- **Real-World Calibration**: 25-path channels with full Doppler for realistic simulation
+- **Simplified Models**: Reduced complexity models for computational efficiency
+- **Real-World Calibration**: Full complexity models for realistic simulation
 - **Perfect Pairing**: Ensures one-to-one correspondence between DT and RW channels
 
 ### Machine Learning Integration
@@ -109,23 +159,9 @@ All figures are automatically saved to the `figs/` directory with high-resolutio
 - **Cosine Similarity**: Directional channel correlation
 - **Throughput Analysis**: System-level performance evaluation
 
-## 📁 Dataset Structure
-
-The system works with DeepVerse-generated scenarios:
-
-```
-scenarios/
-└── Carla-Town05/
-    ├── param/                   # Configuration parameters
-    └── wireless/               # Channel data
-        ├── scene_0/           # Individual scene data
-        ├── scene_1/
-        └── ...
-```
-
 ## 🛠️ Advanced Usage
 
-### Custom Channel Generation
+### Custom Channel Generation (DeepVerse Approach)
 
 ```python
 from deepverse.deepverse_dt_rw_channel_gen import chs_gen
@@ -183,3 +219,7 @@ If you use this code in your research, please cite:
       url={https://arxiv.org/abs/2501.02758}, 
 }
 ```
+
+## 📜 License
+
+MIT License - see LICENSE file for details.
