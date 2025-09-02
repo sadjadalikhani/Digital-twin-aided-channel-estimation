@@ -1,15 +1,17 @@
 #%% SITE SEGMENTATION
 import numpy as np
 import matplotlib.pyplot as plt
-from utils import k_means, k_med, subspace_estimation, todB, chs_gen, subspace_estimation_drl, generate_dft_codebook, plot_smooth_cdf, plot_perf_vs_pilots
+from utils import k_means, k_med, subspace_estimation, todB, subspace_estimation_drl, generate_dft_codebook, plot_smooth_cdf, plot_perf_vs_pilots
 import matplotlib.cm as cm
 import warnings
 warnings.filterwarnings("ignore")
 #%% DT AND RW CHANNEL GENERATION
-scenarios = ['indianapolis_4mShifted_28GHz', 'indianapolis_original_28GHz'] # 'indianapolis_2mShifted_28GHz'
+from deepverse.deepverse_dt_rw_channel_gen import chs_gen
+
+scenarios = np.arange(10)  # Use first 100 scenes from Carla-Town05
 n_beams = 128 
 fov = 180
-n_path = [1, 25] 
+n_path = [5, 25]  # [Digital Twin paths, Real-World paths]
 
 M_x = 1
 M_y = n_beams // M_x
@@ -22,8 +24,25 @@ dataset_dt, dataset_rw, pos, los_status, best_beam, enabled_idxs, bs_pos = chs_g
     n_path,
     codebook)
 
+    # Keep as PyTorch tensors for k_means function compatibility
+    # dataset_dt and dataset_rw are already PyTorch tensors from chs_gen
 
-print(dataset_dt.shape)
+# Ensure all arrays have correct dimensions for k_means function
+# pos should be (N, 3), los_status and best_beam should be (N, 1) for concatenation
+if len(los_status.shape) == 1:
+    los_status = los_status.reshape(-1, 1)
+if len(best_beam.shape) == 1:
+    best_beam = best_beam.reshape(-1, 1)
+
+print(f"\n=== Dataset Information ===")
+print(f"Digital Twin dataset shape: {dataset_dt.shape}")
+print(f"Real-World dataset shape: {dataset_rw.shape}")
+print(f"User positions shape: {pos.shape}")
+print(f"LoS status shape: {los_status.shape}")
+print(f"Best beam indices shape: {best_beam.shape}")
+print(f"Enabled user indices: {len(enabled_idxs)}")
+print(f"Base station position: {bs_pos}")
+
 #%% settings
 n_users = len(dataset_dt)
 pos_coeff = 1
@@ -49,9 +68,12 @@ for trial in range(trials):
     for dataset_idx, dataset_type in enumerate(datasets):
         
         print(f"\n\ntrial: {trial}\ndataset type: {dataset_type}")
+        print(f"Number of users: {n_users}")
   
-        n_areas = 12 
-        n_kmeans_clusters = 80 
+        n_areas = min(12, n_users // 4)  # Ensure areas <= samples/4
+        n_kmeans_clusters = min(80, n_users // 2)  # Ensure clusters <= samples/2
+        
+        print(f"Adjusted parameters: n_areas={n_areas}, n_kmeans_clusters={n_kmeans_clusters}") 
         
         if dataset_type in ["Digital Twin"]:
             imperfect_dataset = dataset_dt
@@ -69,9 +91,9 @@ for trial in range(trials):
                 imperfect_dataset, 
                 dataset_rw,
                 pos[:,:3], 
-                los_status[0 if dataset_idx in [0, 2] else 1 if dataset_idx in [1] else dataset_idx] if len(los_status) > 1 else los_status,
-                best_beam[0 if dataset_idx in [0, 2] else 1 if dataset_idx in [1] else dataset_idx] if len(best_beam) > 1 else best_beam,
-                bs_pos[0], 
+                los_status,
+                best_beam,
+                bs_pos, 
                 pos_coeff,  
                 los_coeff_kmeans, 
                 beam_coeff_kmeans,  
@@ -90,7 +112,7 @@ for trial in range(trials):
                 kmeans_labels,
                 pos[:,:3],
                 enabled_idxs,
-                bs_pos[0],
+                bs_pos,
                 seed=trial
             )
         
@@ -132,9 +154,12 @@ for trial in range(trials):
     for dataset_idx, dataset_type in enumerate(datasets):
         
         print(f"\n\ntrial: {trial}\ndataset type: {dataset_type}")
+        print(f"Number of users: {n_users}")
         
-        n_areas = 12
-        n_kmeans_clusters = 80 
+        n_areas = min(12, n_users // 4)  # Ensure areas <= samples/4
+        n_kmeans_clusters = min(80, n_users // 2)  # Ensure clusters <= samples/2
+        
+        print(f"Adjusted parameters: n_areas={n_areas}, n_kmeans_clusters={n_kmeans_clusters}") 
         
         if dataset_type in ["Digital Twin", "RL-Calibrated Digital Twin"]:
             imperfect_dataset = dataset_dt
@@ -152,9 +177,9 @@ for trial in range(trials):
                 imperfect_dataset, 
                 dataset_rw,
                 pos[:,:3], 
-                los_status[0 if dataset_idx in [0, 3, 4] else 1 if dataset_idx in [1, 2] else dataset_idx] if len(los_status) > 1 else los_status,
-                best_beam[0 if dataset_idx in [0, 3, 4] else 1 if dataset_idx in [1, 2] else dataset_idx] if len(best_beam) > 1 else best_beam,
-                bs_pos[0], 
+                los_status,
+                best_beam,
+                bs_pos, 
                 pos_coeff,  
                 los_coeff_kmeans, 
                 beam_coeff_kmeans,  
@@ -173,7 +198,7 @@ for trial in range(trials):
                 kmeans_labels,
                 pos[:,:3],
                 enabled_idxs,
-                bs_pos[0],
+                bs_pos,
                 seed=trial
             )
     

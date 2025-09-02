@@ -92,7 +92,8 @@ def visualize_principal_components(data_centered, U, selected_area_idx):
     plt.xlabel('Principal Component 1 (PC1)')
     plt.ylabel('Principal Component 2 (PC2)')
     plt.grid(True)
-    plt.show()
+    plt.savefig(f"figs/pca_projection_area_{selected_area_idx}.png", dpi=300, bbox_inches='tight')
+    plt.close()
     explained_var_pc1 = torch.var(data_projected_pc1) / torch.var(data_centered).sum()
     explained_var_pc2 = torch.var(data_projected_pc2) / torch.var(data_centered).sum()
     print(f'PC1 explains {explained_var_pc1.item() * 100:.2f}% of variance')
@@ -624,7 +625,8 @@ def plot_distr(dataset_rw, dataset_dt):
     plt.ylabel("Eigenvalue", fontsize=14)
     plt.grid(alpha=0.3)
     plt.tight_layout()
-    plt.show()
+    plt.savefig("figs/eigenvalues_dataset.png", dpi=300, bbox_inches='tight')
+    plt.close()
 
 #%% GENERATE CHANNELS
 def chs_gen(scenarios, n_beams, fov, n_path, codebook):
@@ -779,7 +781,8 @@ def plot_smooth_cdf(datasets, ss_nmse, trial, loss_func, n=10, r=0.4):
            prop={'family': 'Arial'})
     plt.grid(True, linestyle="--", alpha=0.6)
     plt.tight_layout()
-    plt.show()
+    plt.savefig(f"figs/cdf_throughput_trial_{trial}.png", dpi=300, bbox_inches='tight')
+    plt.close()
 #%%
 def plot_perf_vs_pilots(datasets, ss_nmse, n_pilots, n_beams, trial, loss_func):
     """
@@ -835,4 +838,5 @@ def plot_perf_vs_pilots(datasets, ss_nmse, n_pilots, n_beams, trial, loss_func):
                prop={'family': 'Arial'})
 
     plt.tight_layout()
-    plt.show()
+    plt.savefig(f"figs/performance_vs_pilots_trial_{trial}.png", dpi=300, bbox_inches='tight')
+    plt.close()

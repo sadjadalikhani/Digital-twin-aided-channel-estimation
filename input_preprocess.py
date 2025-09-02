@@ -270,7 +270,8 @@ def plot_areas(areas, all_pos, bs_loc, s=20, show=True, details=True):
     plt.ylim([np.min(all_pos[:,1]), np.max(all_pos[:,1])])
     plt.xlim([np.min(all_pos[:,0]), np.max(all_pos[:,0])])
     if show:
-        plt.show()
+        plt.savefig("figs/areas_plot.png", dpi=300, bbox_inches='tight')
+        plt.close()
     return f, ax
 
 def get_colors(n):
