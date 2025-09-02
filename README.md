@@ -1,6 +1,6 @@
 # Digital Twin-Aided Channel Estimation
 
-A comprehensive implementation of digital twin technology for wireless channel estimation, featuring zone-specific subspace prediction and calibration algorithms. This project demonstrates the integration of DeepVerse simulation framework with machine learning techniques for enhanced channel estimation in wireless communication systems.
+Effective channel estimation in sparse and high-dimensional environments is essential for next-generation wireless systems, particularly in large-scale MIMO deployments. This paper introduces a novel framework that leverages digital twins (DTs) as priors to enable efficient zone-specific subspace-based channel estimation (CE). Subspace-based CE significantly reduces feedback overhead by focusing on the dominant channel components, exploiting sparsity in the angular domain while preserving estimation accuracy. While DT channels may exhibit inaccuracies, their coarse-grained subspaces provide a powerful starting point, reducing the search space and accelerating convergence. The framework employs a two-step clustering process on the Grassmann manifold, combined with reinforcement learning (RL), to iteratively calibrate subspaces and align them with real-world counterparts. Simulations show that digital twins not only enable near-optimal performance but also enhance the accuracy of subspace calibration through RL, highlighting their potential as a step towards learnable digital twins.
 
 ## 📋 Overview
 
