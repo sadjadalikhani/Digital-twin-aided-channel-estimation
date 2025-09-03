@@ -542,8 +542,8 @@ def main():
     
     # Configuration parameters
     SCENARIO_NAME = "Carla-Town05"
-    NUM_PATHS = 5  # Tunable: number of communication paths
-    SCENES = np.arange(1000)  # Tunable: scene selection (changed from [100] for overlay demo)
+    NUM_PATHS = 25  # Tunable: number of communication paths
+    SCENES = np.arange(4000)  # Tunable: scene selection (changed from [100] for overlay demo)
     ENABLE_DOPPLER = False  # Tunable: enable Doppler effects for mobile scenarios
     
     print("=== DeepVerse Communication Channel Tutorial with User Overlay ===")
