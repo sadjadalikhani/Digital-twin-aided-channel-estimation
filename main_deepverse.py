@@ -6,9 +6,9 @@ import matplotlib.cm as cm
 import warnings
 warnings.filterwarnings("ignore")
 #%% DT AND RW CHANNEL GENERATION
-from deepverse.deepverse_dt_rw_channel_gen import chs_gen
+from deepverse_utils.deepverse_dt_rw_channel_gen import chs_gen
 
-scenarios = np.arange(1000)  # Use first 100 scenes from Carla-Town05
+scenarios = np.arange(4000)  # Use first 100 scenes from Carla-Town05
 n_beams = 128 
 fov = 180
 n_path = [5, 25]  # [Digital Twin paths, Real-World paths]

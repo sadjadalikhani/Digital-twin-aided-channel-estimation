@@ -22,7 +22,7 @@ Output Format:
 
 import numpy as np
 import torch
-from deepverse_comm import CommChannelGenerator
+from .deepverse_comm import CommChannelGenerator
 import matplotlib.pyplot as plt
 
 
@@ -207,7 +207,7 @@ def generate_default_codebook(n_beams=128):
     Returns:
         np.array: Beam steering codebook of shape (n_beams, 128)
     """
-    from deepverse_comm import beam_steering_codebook
+    from .deepverse_comm import beam_steering_codebook
     
     # Generate beam angles
     x_angles = np.linspace(0, 180, n_beams + 1)[1:]
