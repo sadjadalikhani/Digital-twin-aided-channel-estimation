@@ -220,11 +220,18 @@ class CommChannelGenerator:
         # Handle None channels
         if channel is None:
             raise ValueError(f"Channel data is None for user {user_index}")
-            
+        
+        # Debug: print raw channel shape
+        print(f"DEBUG: Raw channel shape for user {user_index}: {channel.shape}")
+        
         # Ensure channel has the expected shape (128, 1)
         if len(channel.shape) == 3:
             # Remove the subcarrier dimension if present: (1, 128, 1) -> (1, 128)
-            channel = channel.squeeze(-1)
+            # Only squeeze if the last dimension is 1
+            if channel.shape[-1] == 1:
+                channel = channel.squeeze(-1)
+            elif channel.shape[0] == 1:
+                channel = channel.squeeze(0)
         
         if len(channel.shape) == 2 and channel.shape[0] == 1:
             # Transpose to get (128, 1) from (1, 128)
@@ -232,9 +239,16 @@ class CommChannelGenerator:
         elif len(channel.shape) == 2 and channel.shape[1] == 1:
             # Already in (128, 1) format
             pass
-        else:
-            # Reshape to (128, 1) if needed
+        elif len(channel.shape) == 1:
+            # Already 1D, reshape to (128, 1)
             channel = channel.reshape(-1, 1)
+        else:
+            # Try to reshape to (128, 1)
+            try:
+                channel = channel.reshape(-1, 1)
+            except:
+                print(f"ERROR: Cannot reshape channel of shape {channel.shape} to (128, 1)")
+                raise
             
         return channel
     

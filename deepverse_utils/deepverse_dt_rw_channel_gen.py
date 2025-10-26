@@ -90,10 +90,17 @@ def chs_gen(scenarios, n_beams, fov, n_path, codebook=None):
     for i in range(overlayed_data_rw['total_users']):
         try:
             channel = generator_rw.get_overlayed_channel(i)
+            
+            # Debug: print actual shape
+            print(f"RW user {i}: channel shape = {channel.shape}")
+            
             # Ensure shape is (128,) for (N, 128) dataset
             if channel.shape == (128, 1):
                 channel = channel.flatten()
             elif channel.shape == (1, 128):
+                channel = channel.flatten()
+            elif len(channel.shape) == 2:
+                # Handle any 2D shape by flattening
                 channel = channel.flatten()
             channels_rw.append(channel)
             
@@ -107,7 +114,10 @@ def chs_gen(scenarios, n_beams, fov, n_path, codebook=None):
             print(f"Warning: Could not process RW user {i}: {e}")
             continue
     
-    # Generate corresponding Digital Twin channels for the same users
+    # Check if we have any valid users
+    if len(valid_users) == 0:
+        raise ValueError("No valid users were processed from Real-World dataset. Check channel shapes.")
+    
     print(f"Generating {len(valid_users)} corresponding Digital Twin channels...")
     channels_dt = []
     
