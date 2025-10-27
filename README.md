@@ -54,9 +54,16 @@ This approach uses the Carla-Town05 dataset from DeepVerse with Doppler effects 
 - **Lower Fidelity**: Reduced ray-tracing complexity for computational efficiency
 
 #### Usage
+
+**Local Execution:**
 ```bash
 python main_deepverse.py
 ```
+
+**Interactive Jupyter Notebook (Google Colab):**
+- [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sadjadalikhani/Digital-twin-aided-channel-estimation/blob/main/main_deepverse.ipynb)
+
+Try the interactive notebook version with pre-configured environment and visualizations!
 
 #### Configuration
 ```python
