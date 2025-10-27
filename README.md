@@ -2,6 +2,12 @@
 
 Implementation of zone-specific subspace prediction and calibration for wireless channel estimation using digital twin models.
 
+## 🚀 Quick Start - Try the Interactive Notebook
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sadjadalikhani/Digital-twin-aided-channel-estimation/blob/main/main_deepverse.ipynb)
+
+Experience the DeepVerse Carla-Town05 approach with our interactive Jupyter notebook on Google Colab - no installation required!
+
 ## 📋 Overview
 
 This repository implements the research presented in the paper **"Digital twin aided channel estimation: Zone-specific subspace prediction and calibration"** ([arXiv:2501.02758](https://doi.org/10.48550/arXiv.2501.02758)). The system provides two distinct approaches for digital twin-aided channel estimation using different datasets and methodologies.
@@ -54,16 +60,9 @@ This approach uses the Carla-Town05 dataset from DeepVerse with Doppler effects 
 - **Lower Fidelity**: Reduced ray-tracing complexity for computational efficiency
 
 #### Usage
-
-**Local Execution:**
 ```bash
 python main_deepverse.py
 ```
-
-**Interactive Jupyter Notebook (Google Colab):**
-- [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sadjadalikhani/Digital-twin-aided-channel-estimation/blob/main/main_deepverse.ipynb)
-
-Try the interactive notebook version with pre-configured environment and visualizations!
 
 #### Configuration
 ```python
